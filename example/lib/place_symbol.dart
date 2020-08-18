@@ -33,16 +33,25 @@ class PlaceSymbolBody extends StatefulWidget {
 class PlaceSymbolBodyState extends State<PlaceSymbolBody> {
   PlaceSymbolBodyState();
 
-  static final LatLng center = const LatLng(-33.86711, 151.1947171);
+  static final LatLng center = const LatLng(40.759, -111.876);
 
   MapboxMapController controller;
   int _symbolCount = 0;
   Symbol _selectedSymbol;
   bool _iconAllowOverlap = false;
+  bool hasMapClicked = false;
 
   void _onMapCreated(MapboxMapController controller) {
     this.controller = controller;
     controller.onSymbolTapped.add(_onSymbolTapped);
+  }
+
+  void _onMapClick(Point<double> point, LatLng info) {
+    if(!hasMapClicked){
+      print("map click");
+      hasMapClicked = true;
+      _add("assets/symbols/map-marker.png");
+    }
   }
 
   void _onStyleLoaded() {
@@ -90,178 +99,29 @@ class PlaceSymbolBodyState extends State<PlaceSymbolBody> {
   }
 
   void _add(String iconImage) {
-    List<int> availableNumbers = Iterable<int>.generate(12).toList();
-    controller.symbols.forEach(
-            (s) => availableNumbers.removeWhere((i) => i == s.data['count'])
+    controller.setSymbolIconAllowOverlap(true);
+    List<int> availableNumbers = Iterable<int>.generate(2362*5).toList();
+
+    final List<SymbolOptions> symbolOptionsList = availableNumbers.map(
+      (i) => _getSymbolOptions(iconImage, (i/2).toDouble())
+    ).toList();
+
+    controller.addSymbols(
+      symbolOptionsList
     );
-    if (availableNumbers.isNotEmpty) {
-      controller.addSymbol(
-        _getSymbolOptions(iconImage, availableNumbers.first),
-        {'count': availableNumbers.first}
-      );
-      setState(() {
-        _symbolCount += 1;
-      });
-    }
+  
   }
 
-  SymbolOptions _getSymbolOptions(String iconImage, int symbolCount){
+  SymbolOptions _getSymbolOptions(String iconImage, double symbolCount){
+    print((symbolCount/12).floor());
+    int offset = (symbolCount/12).floor();
     return SymbolOptions(
       geometry: LatLng(
-        center.latitude + sin(symbolCount * pi / 6.0) / 20.0,
-        center.longitude + cos(symbolCount * pi / 6.0) / 20.0,
+        40.758701 + sin(symbolCount * pi / 6.0) / (120.0-offset),
+        -111.876183 + cos(symbolCount * pi / 6.0) / (120.0-offset),
       ),
       iconImage: iconImage,
     );
-  }
-
-  Future<void> _addAll(String iconImage) async {
-    List<int> symbolsToAddNumbers = Iterable<int>.generate(12).toList();
-    controller.symbols.forEach(
-        (s) => symbolsToAddNumbers.removeWhere((i) => i == s.data['count'])
-    );
-    
-    if (symbolsToAddNumbers.isNotEmpty) {
-      final List<SymbolOptions> symbolOptionsList = symbolsToAddNumbers.map(
-        (i) => _getSymbolOptions(iconImage, i)
-      ).toList();
-      controller.addSymbols(
-        symbolOptionsList,
-          symbolsToAddNumbers.map((i) => {'count': i}).toList()
-      );
-  
-      setState(() {
-        _symbolCount += symbolOptionsList.length;
-      });
-    }
-  }
-
-  void _remove() {
-    controller.removeSymbol(_selectedSymbol);
-    setState(() {
-      _selectedSymbol = null;
-      _symbolCount -= 1;
-    });
-  }
-
-  void _removeAll() {
-    controller.removeSymbols(controller.symbols);
-    setState(() {
-      _selectedSymbol = null;
-      _symbolCount = 0;
-    });
-  }
-
-  void _changePosition() {
-    final LatLng current = _selectedSymbol.options.geometry;
-    final Offset offset = Offset(
-      center.latitude - current.latitude,
-      center.longitude - current.longitude,
-    );
-    _updateSelectedSymbol(
-      SymbolOptions(
-        geometry: LatLng(
-          center.latitude + offset.dy,
-          center.longitude + offset.dx,
-        ),
-      ),
-    );
-  }
-
-  void _changeIconOffset() {
-    Offset currentAnchor = _selectedSymbol.options.iconOffset;
-    if (currentAnchor == null) {
-      // default value
-      currentAnchor = Offset(0.0, 0.0);
-    }
-    final Offset newAnchor = Offset(1.0 - currentAnchor.dy, currentAnchor.dx);
-    _updateSelectedSymbol(SymbolOptions(iconOffset: newAnchor));
-  }
-
-  Future<void> _changeIconAnchor() async {
-    String current = _selectedSymbol.options.iconAnchor;
-    if (current == null || current == 'center') {
-      current = 'bottom';
-    } else {
-      current = 'center';
-    }
-    _updateSelectedSymbol(
-      SymbolOptions(iconAnchor: current),
-    );
-  }
-
-  Future<void> _toggleDraggable() async {
-    bool draggable = _selectedSymbol.options.draggable;
-    if (draggable == null) {
-      // default value
-      draggable = false;
-    }
-
-    _updateSelectedSymbol(
-      SymbolOptions(draggable: !draggable),
-    );
-  }
-
-  Future<void> _changeAlpha() async {
-    double current = _selectedSymbol.options.iconOpacity;
-    if (current == null) {
-      // default value
-      current = 1.0;
-    }
-
-    _updateSelectedSymbol(
-      SymbolOptions(iconOpacity: current < 0.1 ? 1.0 : current * 0.75),
-    );
-  }
-
-  Future<void> _changeRotation() async {
-    double current = _selectedSymbol.options.iconRotate;
-    if (current == null) {
-      // default value
-      current = 0;
-    }
-    _updateSelectedSymbol(
-      SymbolOptions(iconRotate: current == 330.0 ? 0.0 : current + 30.0),
-    );
-  }
-
-  Future<void> _toggleVisible() async {
-    double current = _selectedSymbol.options.iconOpacity;
-    if (current == null) {
-      // default value
-      current = 1.0;
-    }
-
-    _updateSelectedSymbol(
-      SymbolOptions(iconOpacity: current == 0.0 ? 1.0 : 0.0),
-    );
-  }
-
-  Future<void> _changeZIndex() async {
-    int current = _selectedSymbol.options.zIndex;
-    if (current == null) {
-      // default value
-      current = 0;
-    }
-    _updateSelectedSymbol(
-      SymbolOptions(zIndex: current == 12 ? 0 : current + 1),
-    );
-  }
-
-   void _getLatLng() async {
-    LatLng latLng = await controller.getSymbolLatLng(_selectedSymbol);
-    Scaffold.of(context).showSnackBar(
-      SnackBar(
-        content: Text(latLng.toString()),
-      ),
-    );
-  }
-
-  Future<void> _changeIconOverlap() async {
-    setState(() {
-      _iconAllowOverlap = !_iconAllowOverlap;
-    });
-    controller.setSymbolIconAllowOverlap(_iconAllowOverlap);
   }
 
   @override
@@ -272,128 +132,17 @@ class PlaceSymbolBodyState extends State<PlaceSymbolBody> {
       children: <Widget>[
         Center(
           child: SizedBox(
-            width: 300.0,
-            height: 200.0,
+            width: 400.0,
+            height: 796.0,
             child: MapboxMap(
+              onMapClick: _onMapClick,
               accessToken: MapsDemo.ACCESS_TOKEN,
               onMapCreated: _onMapCreated,
               onStyleLoadedCallback: _onStyleLoaded,
               initialCameraPosition: const CameraPosition(
-                target: LatLng(-33.852, 151.211),
+                target: LatLng(40.758701, -111.876183),
                 zoom: 11.0,
               ),
-            ),
-          ),
-        ),
-        Expanded(
-          child: SingleChildScrollView(
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: <Widget>[
-                Row(
-                  children: <Widget>[
-                    Column(
-                      children: <Widget>[
-                        FlatButton(
-                          child: const Text('add'),
-                          onPressed: () =>
-                              (_symbolCount == 12) ? null : _add("airport-15"),
-                        ),
-                        FlatButton(
-                          child: const Text('add all'),
-                          onPressed: () =>
-                            (_symbolCount == 12) ? null : _addAll("airport-15"),
-                        ),
-                        FlatButton(
-                          child: const Text('add (custom icon)'),
-                          onPressed: () => (_symbolCount == 12)
-                              ? null
-                              : _add("assets/symbols/custom-icon.png"),
-                        ),
-                        FlatButton(
-                          child: const Text('remove'),
-                          onPressed: (_selectedSymbol == null) ? null : _remove,
-                        ),
-                        FlatButton(
-                          child:  Text('${_iconAllowOverlap ? 'disable' : 'enable'} icon overlap'),
-                          onPressed: _changeIconOverlap,
-                        ),
-                        FlatButton(
-                          child: const Text('remove all'),
-                          onPressed: (_symbolCount == 0) ? null : _removeAll,
-                        ),
-                        FlatButton(
-                          child: const Text('add (asset image)'),
-                          onPressed: () => (_symbolCount == 12)
-                              ? null
-                              : _add(
-                                  "assetImage"), //assetImage added to the style in _onStyleLoaded
-                        ),
-                        FlatButton(
-                          child: const Text('add (network image)'),
-                          onPressed: () =>
-                              (_symbolCount == 12) ? null : _add("networkImage"), //networkImage added to the style in _onStyleLoaded
-                        ),
-                      ],
-                    ),
-                    Column(
-                      children: <Widget>[
-                        FlatButton(
-                          child: const Text('change alpha'),
-                          onPressed:
-                              (_selectedSymbol == null) ? null : _changeAlpha,
-                        ),
-                        FlatButton(
-                          child: const Text('change icon offset'),
-                          onPressed: (_selectedSymbol == null)
-                              ? null
-                              : _changeIconOffset,
-                        ),
-                        FlatButton(
-                          child: const Text('change icon anchor'),
-                          onPressed: (_selectedSymbol == null)
-                              ? null
-                              : _changeIconAnchor,
-                        ),
-                        FlatButton(
-                          child: const Text('toggle draggable'),
-                          onPressed: (_selectedSymbol == null)
-                              ? null
-                              : _toggleDraggable,
-                        ),
-                        FlatButton(
-                          child: const Text('change position'),
-                          onPressed: (_selectedSymbol == null)
-                              ? null
-                              : _changePosition,
-                        ),
-                        FlatButton(
-                          child: const Text('change rotation'),
-                          onPressed: (_selectedSymbol == null)
-                              ? null
-                              : _changeRotation,
-                        ),
-                        FlatButton(
-                          child: const Text('toggle visible'),
-                          onPressed:
-                              (_selectedSymbol == null) ? null : _toggleVisible,
-                        ),
-                        FlatButton(
-                          child: const Text('change zIndex'),
-                          onPressed:
-                              (_selectedSymbol == null) ? null : _changeZIndex,
-                        ),
-                        FlatButton(
-                          child: const Text('get current LatLng'),
-                          onPressed: (_selectedSymbol == null)
-                              ? null
-                              : _getLatLng,
-                        ),
-                      ],
-                    ),
-                  ],
-                )
-              ],
             ),
           ),
         ),

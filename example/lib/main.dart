@@ -5,33 +5,20 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:location/location.dart';
-import 'package:mapbox_gl_example/full_map.dart';
 
-import 'animate_camera.dart';
-import 'full_map.dart';
-import 'line.dart';
 import 'map_ui.dart';
-import 'move_camera.dart';
 import 'page.dart';
-import 'place_circle.dart';
 import 'place_symbol.dart';
-import 'scrolling_map.dart';
 
 final List<ExamplePage> _allPages = <ExamplePage>[
   MapUiPage(),
-  FullMapPage(),
-  AnimateCameraPage(),
-  MoveCameraPage(),
   PlaceSymbolPage(),
-  LinePage(),
-  PlaceCirclePage(),
-  ScrollingMapPage(),
 ];
 
 class MapsDemo extends StatelessWidget {
 
   //FIXME: Add your Mapbox access token here
-  static const String ACCESS_TOKEN = "YOUR_TOKEN_HERE";
+  static const String ACCESS_TOKEN = "pk.eyJ1IjoidGRvd2RsZSIsImEiOiJja2I4OG8waHgwMXQ0MnpwZ3llZzd0a3I2In0.es-ZqvN90XNR-pRpjdvQrw";
 
   void _pushPage(BuildContext context, ExamplePage page) async {
     if (!kIsWeb) {
